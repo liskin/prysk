@@ -22,7 +22,14 @@ from prysk.process import (
 __all__ = ["test", "testfile", "runtests"]
 
 _SKIP = 80
-_IS_ESCAPING_NEEDED = re.compile(rb"[\x00-\x09\x0b-\x1f\x7f-\xff]").search
+_ASCII_NONPRINTABLE = re.compile(rb"[\x00-\x09\x0b-\x1f\x7f-\xff]")
+
+
+def _is_escaping_needed(s):
+    try:
+        return not s.removesuffix(b"\n").decode().isprintable()
+    except UnicodeError:
+        return _ASCII_NONPRINTABLE.search(s)
 
 
 def _escape(s):
@@ -213,7 +220,7 @@ def test(
             if not out.endswith(b"\n"):
                 out += b" (no-eol)\n"
 
-            if _IS_ESCAPING_NEEDED(out):
+            if _is_escaping_needed(out):
                 out = _escape(out)
 
             try:
